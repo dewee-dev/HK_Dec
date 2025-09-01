@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HK小程序 加解密工具</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -26,6 +27,8 @@
       padding: 10px;
       font-size: 14px;
       resize: vertical;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
     button {
       padding: 10px 20px;
@@ -36,6 +39,7 @@
       background-color: #007bff;
       color: white;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #0056b3;
@@ -63,25 +67,33 @@
     const clearButton = document.getElementById('clearButton');
     const copyButton = document.getElementById('copyButton');
 
-    function encryptText(text) {
+    const DECRYPTION_KEY_RAW = "hk6666666109";
+    const PADDED_KEY = DECRYPTION_KEY_RAW.padEnd(32, '0');
+    const DECRYPTION_KEY = CryptoJS.enc.Utf8.parse(PADDED_KEY);
+    const AES_CONFIG = {
+      mode: CryptoJS.mode.ECB,
+      padding: CryptoJS.pad.Pkcs7
+    };
+
+    function encryptText(plainText) {
       try {
-        const encoder = new TextEncoder();
-        const bytes = encoder.encode(text);
-        const base64Str = btoa(String.fromCharCode(...bytes));
-        return base64Str;
+        const encrypted = CryptoJS.AES.encrypt(plainText, DECRYPTION_KEY, AES_CONFIG);
+        return encrypted.toString();
       } catch (e) {
-        return 'ENCRYPTION_ERROR: ' + e.message;
+        return `ENCRYPTION_ERROR: ${e.message}`;
       }
     }
 
-    function decryptText(text) {
+    function decryptText(encryptedBase64Text) {
       try {
-        const binaryStr = atob(text);
-        const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-        const decoder = new TextDecoder();
-        return decoder.decode(bytes);
+        const decrypted = CryptoJS.AES.decrypt(encryptedBase64Text, DECRYPTION_KEY, AES_CONFIG);
+        const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!decryptedText) {
+          throw new Error("解密失败，可能是密钥错误或密文损坏 (Padding is incorrect)。");
+        }
+        return decryptedText;
       } catch (e) {
-        return 'DECRYPTION_ERROR: ' + e.message;
+        return `DECRYPTION_ERROR: ${e.message}`;
       }
     }
 
@@ -105,8 +117,12 @@
       }
       const pattern = /evalPrivateJS\("([^"\\]*(?:\\.[^"\\]*)*)"\)/;
       const match = fullText.match(pattern);
-      const base64Text = match?.[1] || fullText;
-      outputText.value = decryptText(base64Text);
+      if (match && match[1]) {
+        const base64Text = match[1];
+        outputText.value = decryptText(base64Text);
+      } else {
+        outputText.value = "未找到 'evalPrivateJS(\"...\")' 格式，将尝试直接解密整个输入内容...\n\n" + decryptText(fullText);
+      }
     });
 
     clearButton.addEventListener('click', () => {
@@ -120,10 +136,11 @@
         alert("输出框中没有内容可复制。");
         return;
       }
-      navigator.clipboard?.writeText(textToCopy).then(() => {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalText = copyButton.textContent;
         copyButton.textContent = '已复制!';
         setTimeout(() => {
-          copyButton.textContent = '复制结果';
+          copyButton.textContent = originalText;
         }, 1500);
       }).catch(err => {
         console.error('无法复制到剪切板:', err);
