@@ -65,7 +65,10 @@
 
     function encryptText(text) {
       try {
-        return btoa(unescape(encodeURIComponent(text)));
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(text);
+        const base64Str = btoa(String.fromCharCode(...bytes));
+        return base64Str;
       } catch (e) {
         return 'ENCRYPTION_ERROR: ' + e.message;
       }
@@ -73,9 +76,10 @@
 
     function decryptText(text) {
       try {
-        const decoded = atob(text);
-        const bytes = Uint8Array.from(decoded, c => c.charCodeAt(0));
-        return new TextDecoder().decode(bytes);
+        const binaryStr = atob(text);
+        const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+        const decoder = new TextDecoder();
+        return decoder.decode(bytes);
       } catch (e) {
         return 'DECRYPTION_ERROR: ' + e.message;
       }
@@ -99,7 +103,7 @@
         outputText.value = "请输入包含密文的文本。";
         return;
       }
-      const pattern = /evalPrivateJS\\("([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"\\)/;
+      const pattern = /evalPrivateJS\("([^"\\]*(?:\\.[^"\\]*)*)"\)/;
       const match = fullText.match(pattern);
       const base64Text = match?.[1] || fullText;
       outputText.value = decryptText(base64Text);
