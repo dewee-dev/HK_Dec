@@ -130,23 +130,61 @@
       outputText.value = '';
     });
 
-    copyButton.addEventListener('click', () => {
-      const textToCopy = outputText.value;
-      if (!textToCopy) {
-        alert("输出框中没有内容可复制。");
-        return;
-      }
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        const originalText = copyButton.textContent;
-        copyButton.textContent = '已复制!';
-        setTimeout(() => {
-          copyButton.textContent = originalText;
-        }, 1500);
-      }).catch(err => {
-        console.error('无法复制到剪切板:', err);
-        alert('复制失败! 请手动复制。');
-      });
+copyButton.addEventListener('click', () => {
+  const textToCopy = outputText.value;
+  if (!textToCopy) {
+    alert("输出框中没有内容可复制。");
+    return;
+  }
+
+  const originalText = copyButton.textContent;
+
+  // 优先使用现代剪贴板 API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      copyButton.textContent = '已复制!';
+      setTimeout(() => {
+        copyButton.textContent = originalText;
+      }, 1500);
+    }).catch(err => {
+      console.warn('剪贴板 API 失败，尝试兼容模式:', err);
+      fallbackCopy(textToCopy, originalText);
+    });
+  } else {
+    // 如果不支持 clipboard API，使用兼容方案
+    fallbackCopy(textToCopy, originalText);
+  }
+});
+
+function fallbackCopy(text, originalText) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";  // 避免页面滚动
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    const successful = document.execCommand("copy");
+    if (successful) {
+      copyButton.textContent = '已复制!';
+    } else {
+      alert("复制失败! 请手动复制。");
+    }
+  } catch (err) {
+    console.error("兼容复制失败:", err);
+    alert("复制失败! 请手动复制。");
+  }
+
+  setTimeout(() => {
+    copyButton.textContent = originalText;
+    document.body.removeChild(textarea);
+  }, 1500);
+}
+
     });
   </script>
 </body>
 </html>
+
