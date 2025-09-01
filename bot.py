@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 # 从环境变量中读取 BOT_TOKEN，如果找不到，就使用一个默认提示
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_NOT_FOUND")
 # 你的 Web App URL，这个可以公开
-WEB_APP_URL = "https://your-username.github.io/your-repo/new.html" # ‼️ 替换成你的 GitHub Pages URL
+WEB_APP_URL = "https://dewee-dev.github.io/HK_Dec/index.html" # ‼️ 替换成你的 GitHub Pages URL
 
 # --- 机器人逻辑 ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
