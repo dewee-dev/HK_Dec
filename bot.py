@@ -11,15 +11,21 @@ WEB_APP_URL = "https://dewee-dev.github.io/HK_Dec/index.html" # ‼️ 替换成
 
 # --- 机器人逻辑 ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """处理 /start 命令，发送一个带有 Web App 按钮的消息"""
+    """个性化欢迎消息 + 网页跳转按钮"""
     keyboard = [
-        [InlineKeyboardButton("打开加解密工具", web_app={"url": WEB_APP_URL})]
+        [InlineKeyboardButton("🔐 打开加解密工具", web_app={"url": WEB_APP_URL})]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        "你好！点击下面的按钮来打开内嵌的加解密工具：",
-        reply_markup=reply_markup
+        "👋 欢迎使用 *HK 加解密工具*！\n\n"
+        "这是一个专为小程序代码加密/解密设计的在线工具。\n"
+        "点击下方按钮即可打开网页，无需安装，无需注册。\n\n"
+        "🧪 快速、安全、开箱即用！",
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
     )
+
 
 def main():
     """主函数，启动机器人"""
