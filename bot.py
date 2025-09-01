@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -6,11 +7,17 @@ from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_NOT_FOUND")
 WEB_APP_URL = "https://dewee-dev.github.io/HK_Dec/index.html"
 WEBHOOK_PATH = "/webhook"
-PORT = int(os.environ.get("PORT", 10000))  # Render 会自动分配端口
+PORT = int(os.environ.get("PORT", 10000))
+HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "localhost")
 
-# --- Flask 应用 ---
+# --- 初始化 ---
 app = Flask(__name__)
 bot = Bot(token=BOT_TOKEN)
+
+# --- 根路径响应（避免 404） ---
+@app.route("/", methods=["GET", "HEAD"])
+def index():
+    return "Bot is running", 200
 
 # --- Webhook 路由 ---
 @app.route(WEBHOOK_PATH, methods=["POST"])
@@ -34,7 +41,10 @@ def webhook():
         )
     return "ok"
 
-# --- 启动 Flask 服务并设置 Webhook ---
-if __name__ == "__main__":
-    bot.set_webhook(url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}{WEBHOOK_PATH}")
+# --- 异步设置 Webhook 并启动服务 ---
+async def main():
+    await bot.set_webhook(url=f"https://{HOSTNAME}{WEBHOOK_PATH}")
     app.run(host="0.0.0.0", port=PORT)
+
+if __name__ == "__main__":
+    asyncio.run(main())
